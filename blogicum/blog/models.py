@@ -72,7 +72,8 @@ class Post(PublishedModel):
         User,
         on_delete=models.CASCADE,
         related_name='posts',
-        verbose_name='Автор публикации'
+        verbose_name='Автор публикации',
+        null=True,
     )
     location = models.ForeignKey(
         Location,
@@ -89,6 +90,7 @@ class Post(PublishedModel):
         verbose_name='Категория',
         null=True
     )
+    image = models.ImageField('Фото', upload_to='post_images', blank=True)
 
     class Meta:
         verbose_name = 'публикация'
@@ -97,3 +99,16 @@ class Post(PublishedModel):
 
     def __str__(self):
         return self.title[:MAX_NUM_OF_LETTERS]
+
+
+class Comment(PublishedModel):
+    text = models.TextField('Текст')
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comment',
+    )
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ('created_at',)
