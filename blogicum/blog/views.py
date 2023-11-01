@@ -55,7 +55,8 @@ def category_posts(request, category_slug):
         is_published=True
     )
     page_obj = Paginator(get_post_queryset().filter(
-        category__slug=category_slug), MAX_NUM_PAGES).get_page(request.GET.get('page'))
+        category__slug=category_slug
+    ), MAX_NUM_PAGES).get_page(request.GET.get('page'))
     context = {
         'category': category,
         'page_obj': page_obj
@@ -99,9 +100,8 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         slug = self.kwargs.get(self.slug_url_kwarg)
         slug_field = self.get_slug_field()
         queryset = queryset.filter(**{slug_field: slug})
-        obj = queryset.get()
 
-        return obj
+        return queryset.get()
 
     def get_success_url(self):
         return reverse('blog:profile', kwargs={'username': self.get_author()})
@@ -109,8 +109,7 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         if request.user == self.get_author():
             return super().dispatch(request, *args, **kwargs)
-        else:
-            raise Http404()
+        raise Http404()
 
 
 class PostUpdateView(LoginRequiredMixin, UpdateView):
@@ -130,7 +129,10 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.instance.pk})
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.instance.pk}
+        )
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -143,7 +145,10 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('blog:profile', kwargs={'username': self.object.author})
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.object.author}
+        )
 
 
 class PostDeleteView(DeleteView):
@@ -158,7 +163,10 @@ class PostDeleteView(DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse('blog:profile', kwargs={'username': self.object.author})
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.object.author}
+        )
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
@@ -177,7 +185,10 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.poster.pk})
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.poster.pk}
+        )
 
 
 class CommentUpdateView(LoginRequiredMixin, UpdateView):
@@ -192,13 +203,19 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            get_object_or_404(Comment, pk=kwargs['comment_id'], author=request.user)
+            get_object_or_404(
+                Comment,
+                pk=kwargs['comment_id'],
+                author=request.user
+            )
             return super().dispatch(request, *args, **kwargs)
-        else:
-            return redirect('blog:post_detail', post_id=kwargs.get('post_id'))
+        return redirect('blog:post_detail', post_id=kwargs.get('post_id'))
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.object.post.pk})
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.object.post.pk}
+        )
 
 
 class CommentDeleteView(LoginRequiredMixin, DeleteView):
@@ -209,10 +226,16 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            get_object_or_404(Comment, pk=kwargs['comment_id'], author=request.user)
+            get_object_or_404(
+                Comment,
+                pk=kwargs['comment_id'],
+                author=request.user
+            )
             return super().dispatch(request, *args, **kwargs)
-        else:
-            return redirect('blog:post_detail', post_id=kwargs.get('post_id'))
+        return redirect('blog:post_detail', post_id=kwargs.get('post_id'))
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.object.post.pk})
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.object.post.pk}
+        )
