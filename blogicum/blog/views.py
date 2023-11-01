@@ -144,10 +144,17 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 class PostDeleteView(DeleteView):
     model = Post
     template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:profile')
+    pk_url_kwarg = 'post_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        get_object_or_404(Post, pk=kwargs['post_id'], author=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('blog:profile', kwargs={'username': self.object.author})
 
 
-class CommentCreateView(CreateView):
+class CommentCreateView(LoginRequiredMixin, CreateView):
     poster = None
     model = Comment
     form_class = CommentForm
@@ -166,7 +173,7 @@ class CommentCreateView(CreateView):
         return reverse('blog:post_detail', kwargs={'post_id': self.poster.pk})
 
 
-class CommentUpdateView(UpdateView):
+class CommentUpdateView(LoginRequiredMixin, UpdateView):
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
@@ -185,6 +192,15 @@ class CommentUpdateView(UpdateView):
         return reverse('blog:post_detail', kwargs={'post_id': self.object.post.pk})
 
 
-class CommentDeleteView(DeleteView):
+class CommentDeleteView(LoginRequiredMixin, DeleteView):
     model = Comment
+    template_name = 'blog/comment.html'
     success_url = reverse_lazy('blog:index')
+    pk_url_kwarg = 'comment_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        get_object_or_404(Comment, pk=kwargs['comment_id'], author=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', kwargs={'post_id': self.object.post.pk})
