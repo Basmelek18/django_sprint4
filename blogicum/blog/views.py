@@ -16,7 +16,7 @@ from blog.forms import PostForm, UserForm, CommentForm
 MAX_NUM_PAGES = 10
 
 
-def get_post_queryset(filter_on=True, annotate_on=True):
+def get_post_queryset(filter_on=False, annotate_on=False):
     queryset = Post.objects.select_related(
         'category',
         'author',
@@ -30,14 +30,14 @@ def get_post_queryset(filter_on=True, annotate_on=True):
         )
     if annotate_on:
         queryset = queryset.annotate(
-            comment_count=Count('comment')
+            comment_count=Count('comments')
         ).order_by('-pub_date')
     return queryset
 
 
 def index(request):
     template = 'blog/index.html'
-    page_obj = Paginator(get_post_queryset(),
+    page_obj = Paginator(get_post_queryset(filter_on=True, annotate_on=True),
                          MAX_NUM_PAGES).get_page(request.GET.get('page'))
     context = {'page_obj': page_obj}
     return render(request, template, context)
@@ -54,7 +54,7 @@ def post_detail(request, post_id):
         raise Http404()
     context = {'post': post,
                'form': CommentForm(),
-               'comments': post.comment.select_related('author')}
+               'comments': post.comments.select_related('author')}
 
     return render(request, template, context)
 
@@ -66,7 +66,9 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    page_obj = Paginator(get_post_queryset().filter(
+    page_obj = Paginator(get_post_queryset(
+        filter_on=True,
+        annotate_on=True).filter(
         category__slug=category_slug
     ), MAX_NUM_PAGES).get_page(request.GET.get('page'))
     context = {
@@ -90,7 +92,7 @@ class PostSuccessMixin:
     def get_success_url(self):
         return reverse(
             'blog:profile',
-            kwargs={'username': self.request.user}
+            kwargs={'username': self.request.user.username}
         )
 
 
@@ -132,10 +134,10 @@ class UserListView(ListView):
             User,
             username=self.kwargs['username']
         )
-        if self.profile.username == str(self.request.user):
-            queryset = get_post_queryset(False, True)
-        elif self.profile.username != self.request.user:
-            queryset = get_post_queryset(True, True)
+        if self.profile == self.request.user:
+            queryset = get_post_queryset(filter_on=False, annotate_on=True)
+        elif self.profile != self.request.user:
+            queryset = get_post_queryset(filter_on=True, annotate_on=True)
         return queryset.filter(author=self.profile)
 
 
@@ -145,11 +147,13 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'blog/user.html'
 
     def get_object(self, queryset=None):
-        queryset = User.objects.filter(username=self.request.user)
-        return queryset.get()
+        return self.request.user
 
     def get_success_url(self):
-        return reverse('blog:profile', kwargs={'username': self.request.user})
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.request.user.username}
+        )
 
 
 class PostUpdateView(LoginRequiredMixin, PostDispatchMixin, UpdateView):
